@@ -1,0 +1,127 @@
+#----------------------------Section 0 - Importing Libraries----------------------------
+
+import pandas as pd
+import numpy as np
+from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import train_test_split   #
+from sklearn.tree import DecisionTreeRegressor         #loading descision tree
+from sklearn.ensemble import RandomForestRegressor     #loading random forest 
+
+#----------------------------Section 1 - Exploratory Data Analysis----------------------------
+
+# READ THE CSV FILE
+
+#-- Read the training file  (this is a sample file I used to write this code) 
+df = pd.read_csv('C:\\Users\\syed1\\Documents\\Learning\\Hackathons\\Phishing Detection\\Phising_Training_Dataset\\Phising_Training_Dataset.csv')
+
+#-- Read the test file 
+df_test = pd.read_csv('C:\\Users\\syed1\\Documents\\Learning\\Hackathons\\Phishing Detection\\Phising_Testing_Dataset\\Phising_Testing_Dataset.csv')
+
+# INSPECT THE FILE
+
+# head() prints first few rows
+print(df.head())
+
+# info() shows information on each col. Like data types, missing etc
+print(df.info())
+
+# shape() gives the number of rows and columns
+print(df.shape)
+
+# Print column names only
+print(sorted(df))
+
+# Find out the type of variable
+type(df)
+
+# Selecting a column 
+df['has_an_application']
+
+# Select distinct values from a column
+df['level_of_study_new'].drop_duplicates()
+
+# Select too 5 unique values 
+df['has_an_application'].drop_duplicates().head(5)
+
+# Where Clause
+df[df['level_of_study_new'] == 'graduate'].head(5)
+
+# Where Clause with AND and OR
+
+
+# Max Correlation of one column related to another
+abs_corrmat = np.abs(df.corr())
+max_corr = abs_corrmat.apply(lambda x: sorted(x)[-2])
+print('Maximum Correlation possible for each column: ', np.round(max_corr.tolist(), 2))
+
+
+# MISSING VALUES
+
+# Check for missing values in the dataframe
+df.isnull().values.any()
+
+# Count for missing values in each column of the dataframe
+df.isna().sum()
+
+# Plot a bar chart to visualize missing values in each column 
+df.isnull().sum().reset_index(name = "count of missing").plot.bar(x='index',y='n',rot= 45)
+
+df.isna().sum()[df.isna().sum()>0].plot(kind='bar')
+
+
+# ALTER DATAFRAME
+
+# Sort Columns in Ascending/Descending Order
+df.sort_index(axis=1, ascending=False, inplace=True)  # Use Ascending = T/F to make specify your sorting
+
+# Join Two data frames on multiple columns
+pd.merge(df1, df2, how='inner', left_on=['fruit', 'weight'], right_on=['pazham', 'pounds'], suffixes=['_left', '_right'])
+
+# Create One hot ecoding of a categorical variable
+df = pd.DataFrame(np.arange(25).reshape(5,-1), columns=list('DNSRecord'))
+
+
+#----------------------------Section 2 - Train Test Split--------------------------------------------
+
+
+# (1) Create target object and call it y
+y = df.Result
+
+# (2) Create a features List 
+features = ['Abnormal_URL', 'DNSRecord', 'Domain_registeration_length', 'Favicon', 'Google_Index', 'HTTPS_token', 'Iframe', 'Links_in_tags', 'Links_pointing_to_page', 'Page_Rank', 'Prefix_Suffix', 'Redirect', 'Request_URL', 'RightClick', 'SFH', 'SSLfinal_State', 'Shortining_Service', 'Statistical_report', 'Submitting_to_email', 'URL_Length', 'URL_of_Anchor', 'age_of_domain', 'double_slash_redirecting', 'having_At_Symbol', 'having_IP', 'having_Sub_Domain', 'key', 'on_mouseover', 'popUpWidnow', 'port', 'web_traffic']
+
+# (3) Create feature Object X to be used for prediction
+X = df[features]
+
+# (4) Split into validation and training data
+train_X, val_X, train_y, val_y = train_test_split(X, y, random_state = 1)
+
+print(val_X.shape)
+print(train_y.shape)
+
+
+
+#----------------------------Section 3 - Model Building--------------------------------------------
+
+# Building a Decision Tree Model, fitting on test 
+
+dt_model = DecisionTreeRegressor(random_state=1)
+dt_model.fit(train_X, train_y)
+val_preds = dt_model.predict(val_X)
+print(mean_absolute_error(val_y, val_preds))
+
+
+# Building a Random Forest Model, fitting on test 
+
+forest_model = RandomForestRegressor(random_state=1)
+forest_model.fit(train_X, train_y)
+melb_preds = forest_model.predict(val_X)
+print(mean_absolute_error(val_y, melb_preds))
+
+
+
+##>>> More coming soon <<<
+## ML pipleine to build and tets multiple models coming soon 
+## Function to visualize confusion matrix
+
+
