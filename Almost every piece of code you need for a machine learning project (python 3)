@@ -1,4 +1,6 @@
-#----------------------------Section 0 - Importing Libraries----------------------------
+# -*- coding: utf-8 -*-
+
+#Importing Libraries
 
 import pandas as pd
 import numpy as np
@@ -11,7 +13,7 @@ from sklearn.ensemble import RandomForestRegressor     #loading random forest
 
 # READ THE CSV FILE
 
-#-- Read the training file  (this is a sample file I used to write this code) 
+#-- Read the training file
 df = pd.read_csv('C:\\Users\\syed1\\Documents\\Learning\\Hackathons\\Phishing Detection\\Phising_Training_Dataset\\Phising_Training_Dataset.csv')
 
 #-- Read the test file 
@@ -61,7 +63,9 @@ print('Maximum Correlation possible for each column: ', np.round(max_corr.tolist
 df.isnull().values.any()
 
 # Count for missing values in each column of the dataframe
-df.isna().sum()
+missing_val_count_by_column = df.isna().sum()
+print(missing_val_count_by_column[missing_val_count_by_column > 0])
+
 
 # Plot a bar chart to visualize missing values in each column 
 df.isnull().sum().reset_index(name = "count of missing").plot.bar(x='index',y='n',rot= 45)
@@ -70,6 +74,15 @@ df.isna().sum()[df.isna().sum()>0].plot(kind='bar')
 
 
 # ALTER DATAFRAME
+
+#Converting all the columns in a dataframe into a numeric. errors=ignore will convert only the columns that are eligible
+df1 = df.apply(pd.to_numeric, errors='ignore') # converting to numeric
+print(df1.dtypes)  # checking data types
+df1.select_dtypes([np.number]).columns # checking the numeric columns only. We now have 21 columns as truly numeric 
+
+# Creating a subset of an existing data frame based on the column data types
+numeric_columns = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+df_num = df1.select_dtypes(include=numeric_columns)
 
 # Sort Columns in Ascending/Descending Order
 df.sort_index(axis=1, ascending=False, inplace=True)  # Use Ascending = T/F to make specify your sorting
@@ -92,6 +105,7 @@ features = ['Abnormal_URL', 'DNSRecord', 'Domain_registeration_length', 'Favicon
 
 # (3) Create feature Object X to be used for prediction
 X = df[features]
+X_test = df_test[features].copy()
 
 # (4) Split into validation and training data
 train_X, val_X, train_y, val_y = train_test_split(X, y, random_state = 1)
@@ -103,7 +117,7 @@ print(train_y.shape)
 
 #----------------------------Section 3 - Model Building--------------------------------------------
 
-# Building a Decision Tree Model, fitting on test 
+# Building a single Decision Tree Model, fitting on test 
 
 dt_model = DecisionTreeRegressor(random_state=1)
 dt_model.fit(train_X, train_y)
@@ -118,10 +132,47 @@ forest_model.fit(train_X, train_y)
 melb_preds = forest_model.predict(val_X)
 print(mean_absolute_error(val_y, melb_preds))
 
+###  Model Pipeline for random Forest ####
+# Define the models
+model_1 = RandomForestRegressor(n_estimators=50, random_state=0)
+model_2 = RandomForestRegressor(n_estimators=100, random_state=0)
+model_3 = RandomForestRegressor(n_estimators=100, criterion='mse', random_state=0)
+model_4 = RandomForestRegressor(n_estimators=200, min_samples_split=20, random_state=0)
+model_5 = RandomForestRegressor(n_estimators=100, max_depth=7, random_state=0)
+
+models = [model_1, model_2, model_3, model_4, model_5]
+
+# Function for comparing different models
+def score_model(model, X_t=train_X, X_v=val_X, y_t=train_y, y_v=val_y):
+    model.fit(X_t, y_t)
+    preds = model.predict(X_v)
+    return mean_absolute_error(y_v, preds)
+
+for i in range(0, len(models)):
+    mae = score_model(models[i])
+    print("Model %d MAE: %d" % (i+1, mae))
+    
+print(models)
+
+my_model = model_2 # select the best model based your evaluation metrics 
+
+# Fit the model to the training data
+my_model.fit(X, y)
+
+# Generate test predictions
+preds_test = my_model.predict(X_test)
+
+# Save predictions in format used for competition scoring  note: this is for competitions only 
+output = pd.DataFrame({'key': X_test.key,
+                       'Result': preds_test})
+print(output.head())
+output.to_csv('submission.csv', index=False)
 
 
-##>>> More coming soon <<<
-## ML pipleine to build and tets multiple models coming soon 
-## Function to visualize confusion matrix
+
+
+
+
+
 
 
